@@ -55,7 +55,8 @@ int main()
 		default:
 			wait(NULL);
 			printf("parent:\n");
-			info();																		             return 0;	
+			info();	
+			return 0;	
 	}
 		    return 0;
 }
