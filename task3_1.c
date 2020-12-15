@@ -35,17 +35,6 @@ int main(int argc, char* argv[])
 		printf("%s is not simple file", argv[1]);
 		return 3;
 	}
-	if (lstat(argv[2], &stat_buf) == -1)
-	{
-		printf ("Failed to stat %s\n%s\n", argv [2], strerror(errno));
-		return 2;
-	}
-
-      	if (S_ISREG(stat_buf.st_mode) == 0)
-	{
-		printf("%s is not simple file", argv[2]);
-		return 4;
-	}
 	
 	input_fd = open (argv [1], O_RDONLY);
 	if (input_fd == -1) 
@@ -54,7 +43,7 @@ int main(int argc, char* argv[])
 		return 5;
 	}
 						   
-	output_fd = open(argv[2], O_WRONLY | O_CREAT, 0644);
+	output_fd = open(argv[2], O_WRONLY | O_CREAT);
 	if(output_fd == -1)
 	{
 		printf ("Can't create file for whiting %s\n%s\n", argv [2], strerror(errno));
