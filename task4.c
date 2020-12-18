@@ -1,78 +1,136 @@
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/sysmacros.h>
 #include <fcntl.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/sysmacros.h>
+#include <sys/stat.h>
+#include <time.h>
+ 
+#define BUF_SIZE 1024
 
-int main(int argc, char *argv[])
+
+int main(int argc, char* argv[])
 {
-	struct stat sb;
-	struct timespec times[2];
-	int fd; /*File descriptor*/
+	int input_fd, output_fd;   
+	ssize_t ret_in, ret_out;   
+	char buffer[BUF_SIZE];
+	struct stat stat_buf;
+	int result;
+	int was_written = 0;
 
-	if (argc != 2) 
+	if(argc != 3)
 	{
-		fprintf(stderr, "Usage: %s <pathname>\n", argv[0]);
-		exit(EXIT_FAILURE);
+		printf ("Usage: cp read_file_name write_file_name\n");
+		return 1;
+	}		        
+	if (lstat(argv[1], &stat_buf) == -1)
+	{
+		printf ("Failed to stat %s\n%s\n", argv [1], strerror(errno));
+		return 2;
 	}
 
-	if (lstat(argv[1], &sb) == -1) 
+	printf("Old file: \n");
+	printf("Last file access:         %s", ctime(&stat_buf.st_atime));
+	printf("Last file modification:   %s", ctime(&stat_buf.st_mtime));
+
+
+	if (!S_ISREG(stat_buf.st_mode))
 	{
-		perror("lstat");
-		exit(EXIT_FAILURE);
+		printf("%s is not regular file", argv[1]);
+		return 3;
 	}
 
-	printf("ID of containing device:  [%lx,%lx]\n", (long) major(sb.st_dev), (long) minor(sb.st_dev));
-	printf("File type:                ");
-	switch (sb.st_mode & S_IFMT) 
+
+	input_fd = open (argv [1], O_RDONLY);
+
+	if (input_fd == -1) 
 	{
-		case S_IFBLK:  printf("block device\n");            break;
-		case S_IFCHR:  printf("character device\n");        break;
-		case S_IFDIR:  printf("directory\n");               break;
-		case S_IFIFO:  printf("FIFO/pipe\n");               break;
-		case S_IFLNK:  printf("symlink\n");                 break;
-		case S_IFREG:  printf("regular file\n");            break;
-		case S_IFSOCK: printf("socket\n");                  break;
-		default:       printf("unknown?\n");                break;
-	}
-	printf("I-node number:            %ld\n", (long) sb.st_ino);
-	printf("Mode:                     %lo (octal)\n", (unsigned long) sb.st_mode);	
-	printf("Link count:               %ld\n", (long) sb.st_nlink);
-	printf("Ownership:                UID=%ld   GID=%ld\n", (long) sb.st_uid, (long) sb.st_gid);
-	printf("Preferred I/O block size: %ld bytes\n",(long) sb.st_blksize);
-	printf("File size:                %lld bytes\n",(long long) sb.st_size);
-	printf("Blocks allocated:         %lld\n",(long long) sb.st_blocks);
-	printf("Last status change:       %s", ctime(&sb.st_ctime));
-	printf("Last file access:         %s", ctime(&sb.st_atime));
-	printf("Last file modification:   %s", ctime(&sb.st_mtime));
-
-	/*copy right access*/
-	fd=open(argv[1],O_RDONLY);
-	perror("open");
-	fchmod(fd,S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
-	perror("fchmod");
-
-	/*change mtime and atime*/
-	times[0].tv_sec = 31536000;   /*1970 + 1 year */
-	times[1].tv_sec = 63072000;   /*1970 + 2 year */
-
-	if(futimens(fd, times) == -1)
-	{
-		perror("futimens");
+		printf ("Can't open file for reading %s\n%s\n", argv [1], strerror(errno));
+		return 5;
 	}
 
-	if (lstat(argv[1], &sb) == -1) 
+	output_fd = open(argv[2], O_WRONLY | O_CREAT, 00700);
+
+	if(output_fd == -1)
 	{
-		perror("lstat");
-		exit(EXIT_FAILURE);
+		printf ("Can't create file for whiting %s\n%s\n", argv [2], strerror(errno));
+		close(input_fd);
+		return 6;
 	}
 
-	printf("New file times:\n");
-	printf("Last status change:       %s", ctime(&sb.st_ctime));
-	printf("Last file access:         %s", ctime(&sb.st_atime));
-	printf("Last file modification:   %s", ctime(&sb.st_mtime));
-	exit(EXIT_SUCCESS);
+	do 
+	{
+		ret_in = read (input_fd, &buffer, BUF_SIZE);
+ 		was_written = 0;
+		if (ret_in == -1)
+		{
+			perror("Unable to read");
+			close(input_fd);
+			close(output_fd);
+			return 7;
+		}
+		do 
+		{
+
+		ret_out = write (output_fd, &buffer, (ssize_t) ret_in);
+		was_written += ret_out;
+		if (ret_out == -1)
+	       		{
+			printf ("Error during copy process\n%s\n", strerror(errno));
+			return 8;
+			}
+		} while (was_written != ret_in);
+
+	} while (ret_in != 0);
+
+
+	if (fsync(output_fd) == -1)
+    	{
+		perror("Failed to fsync");
+		return 9;
+	}
+	if (fchmod(output_fd, stat_buf.st_mode) == -1)
+	{
+		perror("Failed to fchmod");
+		return 10;
+	}
+
+	struct timespec am_time[2] = {stat_buf.st_atim, stat_buf.st_mtim};
+
+	if (futimens(output_fd, am_time) == -1)
+	{
+		perror("Failed to futimens");
+		return 11;
+	};
+
+
+	if (lstat(argv[2], &stat_buf) == -1)
+	{
+		printf ("Failed to stat %s\n%s\n", argv [2], strerror(errno));                                                                                                              return 2;
+	}
+
+	printf("New file: \n");
+	printf("Last file access:         %s", ctime(&stat_buf.st_atime));
+	printf("Last file modification:   %s", ctime(&stat_buf.st_mtime));
+
+	result = close(input_fd);
+	if (result == -1)
+	{
+		perror("unable to close input_fd");
+		return 12;
+	}
+
+	result = close(output_fd);
+	if (result == -1)
+	{
+		perror("unable to close output_fd");
+		return 13;
+	}
+
+	return 0;
 }
-
