@@ -6,15 +6,8 @@
 #include <time.h>
 #include <stdlib.h>
 #include <sys/sysmacros.h>
-#ifdef S_BLKSIZE
-#else
-#include <sys/param.h>
-#ifdef DEV_BSIZE
-#define BL_SIZE DEV_BSIZE
-#else
-#error "Impossible to determine block size"
-#endif
-#endif
+
+#define S_BLKSIZE 512
 
 int main (int argc, char *argv[])
 {
@@ -39,35 +32,23 @@ int main (int argc, char *argv[])
 			(unsigned int) stat_buf.st_uid,
 			(unsigned int) stat_buf.st_gid);
 
-    printf("File type:");
-    switch (stat_buf.st_mode & S_IFMT)
-    {
-	    case S_IFBLK: 
-		    printf("block device\n"); 
+     printf("File type:");
+     switch (stat_buf.st_mode & S_IFMT)
+     {
+         case S_IFBLK: printf("block device\n"); 
                     break;
-	    case S_IFCHR: 
-		    printf("character device\n");
+         case S_IFCHR: printf("character device\n");
                     break;
-	    case S_IFDIR: 
-		    printf("directory\n");
+         case S_IFDIR: printf("directory\n");
                     break;
-	    case S_IFIFO: 
-		    printf("FIFO/pipe\n");
+         case S_IFIFO: printf("FIFO/pipe\n");
                     break;
-	    case S_IFLNK: 
-		    printf("symlink\n");
+         case S_IFLNK: printf("symlink\n");
                     break;
-	    case S_IFREG: 
-		    printf("regular file\n");
+         case S_IFREG: printf("regular file\n");
                     break;
-	    case S_IFSOCK: 
-		    printf("socket\n");
-                    break;		    
-	    default: printf("inknown type\n");
-    }
-
-    printf("Last changed: %s", ctime(&stat_buf.st_ctime));
-    printf("Last access: %s", ctime(&stat_buf.st_atime));
-    printf("Last modification: %s", ctime(&stat_buf.st_mtime));
-    return 0;
+         case S_IFSOCK: printf("socket\n");
+                    break;
+         default: printf("inknown type\n");   
+     }
 }
