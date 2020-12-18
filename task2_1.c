@@ -11,43 +11,32 @@
 #include <errno.h>
 #include <string.h>
 
-#define BUF_SIZE 128
-
 int main(int argc, char* argv[]) 
 {
-	int input_fd, output_fd;
-	ssize_t retin, retout;
-	char buffer[BUF_SIZE];
+	int output_fd;
+	char* message;
+	int message_len;
 
 	if (argc != 3) 
 	{
-		printf("Usage: read_file_name, write_file_name\n");
+		printf("Usage:  write_file_name\n");
 		return 1;
 	}
 
-	input_fd = open(argv[1], O_RDONLY);
-	if (input_fd == -1)
+	output_fd = open(argv[1], O_WRONLY | O_CREAT, 0644);
+	if (output_fd == -1)
 	{
-		printf("Can't open file for reading");
+		printf("Can't create file for writing");
 		return 2;
 	}
 
-	output_fd = open(argv[2], O_WRONLY | O_CREAT, 0644);
-	if (output_fd == -1)
+	message_len = strlen(argv[2]);
+	
+	for (size_t i = 0; i < message_len; i++) 
 	{
-		printf("Can't write into the file");
-		return 3;
+		dprintf(output_fd, "%c", argv[2][i]);
 	}
 
-	while ((retin = read(input_fd, &buffer, BUF_SIZE)) > 0)
-	{
-		for (size_t i = 0; i < retin; i++) 
-		{
-			dprintf(output_fd, "%c", buffer[i]);
-		}
-	}
-
-	close(input_fd);
 	close(output_fd);
 
 	return 0;
