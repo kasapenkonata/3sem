@@ -18,6 +18,7 @@ int main(int argc, char* argv[])
 	char buffer[BUF_SIZE];
 	struct stat stat_buf;
 	int result;
+	int was_written = 0;
 
 	if(argc != 3)
 	{
@@ -56,22 +57,27 @@ int main(int argc, char* argv[])
 	do 
 	{
 		ret_in = read (input_fd, &buffer, BUF_SIZE);
- 		if (ret_in == -1)
+ 		was_written = 0;
+		if (ret_in == -1)
 		{
 			perror("Unable to read");
 			close(input_fd);
 			close(output_fd);
 			return 7;
 		}
+		do 
+		{
+
 		ret_out = write (output_fd, &buffer, (ssize_t) ret_in);
-		if(ret_out != ret_in)
-	       	{
+		was_written += ret_out;
+		if (ret_out == -1)
+	       		{
 			printf ("Error during copy process\n%s\n", strerror(errno));
 			return 8;
-		}
+			}
+		} while (was_written != ret_in);
 
-	}
-	while (ret_in != 0);	
+	} while (ret_in != 0);	
 
 	result = close(input_fd);
 	if (result == -1)
