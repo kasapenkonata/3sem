@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <string.h>
 
+
 int main(int argc, char* argv[]) 
 {
 	int output_fd;
