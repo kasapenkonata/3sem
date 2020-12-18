@@ -1,7 +1,3 @@
-/*
- * task 2.1 - open, read, write, close - for regular files, using dprintf
- **/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
