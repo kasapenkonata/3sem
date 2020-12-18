@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/mount.h>
-#include <sys/statfs.h>
+#include <sys/statvfs.h>
 
 int main(int argc, char *argv[])
 {
@@ -11,17 +11,16 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	struct statfs bufer;
-	if (statfs(argv[1], &bufer) == -1)
+	struct statvfs bufer;
+	if (statvfs(argv[1], &bufer) == -1)
 	{
-		perror("Failed to statfs\n");
+		perror("Failed to statvfs\n");
 		return 1;
 	}
 
 	printf("Size total: %lu\n", bufer.f_bsize*bufer.f_blocks);
 	printf("Size available for unpriviled user:  %lu\n", bufer.f_bsize*bufer.f_bavail);
-	printf("Size available in filesystem: %lu\n", bufer.f_bfree*bufer.f_bsize);
-	printf("Size used1:  %lu\n", bufer.f_bsize * (bufer.f_blocks - bufer.f_bavail));
+	printf("Size available in filesystem: %lu\n", bufer.f_bsize * bufer.f_bfree);
 	printf("Size used2: %lu\n", bufer.f_bsize * (bufer.f_blocks - bufer.f_bfree));
 	return 0;
 }
