@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	output_fd = open(argv[1], O_WRONLY | O_CREAT, 0644);
+	output_fd = open(argv[1], O_WRONLY | O_CREAT, 0644); //user is able to read, user is able to write, group is able to read, everyone is able to read
 	if (output_fd == -1)
 	{
 		printf("Can't create file for writing");
