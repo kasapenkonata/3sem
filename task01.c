@@ -5,15 +5,11 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <stdlib.h>
-#include <sys/sysmacros.h>
 #ifdef S_BLKSIZE
+#define BL_SIZE S_BLKSIZE
 #else
 #include <sys/param.h>
-#ifdef DEV_BSIZE
 #define BL_SIZE DEV_BSIZE
-#else
-#error "Impossible to determine block size"
-#endif
 #endif
 
 int main (int argc, char *argv[])
