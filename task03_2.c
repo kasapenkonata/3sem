@@ -10,7 +10,6 @@
  
 #define BUF_SIZE 1024
 
-
 int main(int argc, char* argv[])
 {
 	int input_fd, output_fd;   

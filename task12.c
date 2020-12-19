@@ -3,10 +3,12 @@
 #include <unistd.h>
 #include <pwd.h>
 #include <grp.h>
+
 int main(int argc, char* argv[])
 {
 	printf("process ID: %d\n", getpid());
 	printf("process parent's ID: %d\n", getppid());
+
 	struct passwd *user;
 	user = getpwuid(getuid()); /*returns pointer to structure user or NULL if ERROR*/
 	if (!user)
